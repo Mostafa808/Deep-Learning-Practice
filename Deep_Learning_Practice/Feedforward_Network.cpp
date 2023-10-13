@@ -1,87 +1,4 @@
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <cstdlib>
-#include <math.h>
-#include <thread>
-#include <time.h>
-#include <cassert>
-
-float precision; int size_type;
-decltype(size_type) cBias = 1, gPrevious = -1, gNext = 1, gFirst = 0;
-decltype(precision) gAlpha = static_cast<decltype(precision)>(1e-3), gBeta = static_cast <decltype(precision)>(0.7),
-gEpsilon = static_cast<decltype(precision)>(1e-8), gBeta_m = static_cast <decltype(precision)>(0.9),
-gBeta_v = static_cast <decltype(precision)>(0.99),
-gTinyNeg = static_cast <decltype(precision)>(-1e-3), gTinyPos = static_cast <decltype(precision)>(1e-3);
-std::vector<decltype(size_type)> gTraining_settings({ 1,1 });
-std::vector<bool> gUpdateSettings({ 0,0,1 });
-
-decltype(precision) randomRange(decltype(precision) max = 1, decltype(precision) min = 0, bool to_int = 0);
-struct network;
-struct layer;
-struct node;
-struct link;
-
-struct network {
-	decltype(size_type) size, tLayerSize = 5;
-	std::vector <layer> layers;
-	std::vector<decltype(precision)> teacherResults, errors, errorsGrid;
-	decltype(precision) totalError = 0;
-	int64_t epoch = 0;
-	network(const std::vector<layer>& tLayers, decltype(size_type) tSize = 0);
-	void feedforward(decltype(size_type) firstLayer, decltype(size_type) lastLayer);
-	void backPropagation(const std::vector<bool>& updateSettings, decltype(size_type) firstLayer, decltype(size_type) lastLayer);
-	void rescaleLinks();
-	void rescaleTeacher(decltype(size_type) lastLayer = 0);
-	void resetErrorsGrid();
-	void resetTotalError();
-	void normalized_init();
-	void deep_learning_pretraining(std::vector<decltype(precision)> inputs, decltype(size_type) SingleSessionLength, decltype(size_type) pretrainingType = 1);
-	void lossFunction(decltype(size_type) lastLayer = 0, decltype(size_type) formulaCode = 0, decltype(size_type) learnRange = -1);
-	void setInputs(const std::vector<decltype(precision)>& input, decltype(size_type) layerIndex = 0);
-	void getOutputs(std::vector<decltype(precision)>& output, decltype(size_type) layerIndex = 0);
-	void trainingSession(const std::vector< std::vector<decltype(precision)>>& inputs, const std::vector< std::vector<decltype(precision)>>& tTeacherResults, const std::vector<decltype(size_type)>& settings, const std::vector<bool>& updateSettings, decltype(size_type) sessionLength, decltype(size_type) firstLayer = 0, decltype(size_type) lastLayer = 0, decltype(size_type) rolls = 1);
-
-	void assignOutput(layer& outLayer);
-	void dynamicSingleTraining(const std::vector<decltype(precision)>& input, const std::vector<decltype(precision)>& tTeacherResult, const std::vector<decltype(size_type)>& settings, const std::vector<bool>& updateSettings, decltype(size_type) sessionLength, decltype(size_type) firstLayer = 0, decltype(size_type) lastLayer = 0, decltype(size_type) rolls = 1);
-
-	void viewArrayValues(const std::vector<decltype(precision)> data);
-};
-struct layer {
-	decltype(size_type) size = 1;
-	std::vector <node> nodes;
-	layer(const std::vector<node>& tNodes, decltype(size_type) tSize = 0);
-	layer();
-	void feedforward(const layer& previous);
-	void OutputLayerBackPropagation(const std::vector<decltype(precision)>& errorsGrid, const layer& next, const std::vector<bool>& updateSettings);
-	void backPropagation(const layer& next, const std::vector<bool>& updateSettings);
-	void rescaleLinks(const layer& next);
-	void normalized_init(decltype(size_type) inputsLen, decltype(size_type) outputsLen);
-	void viewNodesValues();
-
-};
-struct node {
-	decltype(precision) value = 1, min = -2, max = 2, preValue = 0;
-	decltype(size_type) formulaCode = 1, momentumType = 1;
-	std::vector<link> links;
-	node(); node(std::vector<link> tLinks, decltype(precision) tMin = 0, decltype(precision) tMax = 1, decltype(size_type) tFormulaCode = 1, decltype(size_type) tMomentumType = 1);
-	void feedforward(const layer& previous, decltype(size_type) linkIndex);
-	void backPropagation(const std::vector<decltype(precision)>& outputGrid, const std::vector<bool>& updateSettings);
-	void rescaleLinks(const layer& next);
-	void normalized_init(decltype(size_type) inputsLen, decltype(size_type) outputsLen);
-	static decltype(precision) activitation(decltype(precision) input, decltype(size_type) formulaCode = 0,
-		decltype(precision) min = 0, decltype(precision) max = 1);
-	static decltype(precision) activitationGrid(decltype(precision) input, decltype(size_type) formulaCode = 0,
-		decltype(precision) min = 0, decltype(precision) max = 1);
-	static decltype(precision) momentum(decltype(precision) oldGrid, decltype(size_type) momentumType = 0, decltype(precision) beta = gBeta);
-};
-struct link {
-	decltype(precision) weight, grid, change = 0, epsilon = gEpsilon, eta = gAlpha,
-		m = 0, v = 0, mVector = 0, vVector = 0;
-	link(decltype(precision) tWeight, decltype(precision) tGrid);
-	link(decltype(precision) tWeight);
-	link();
-};
+#include "FeedForward_Network.h"
 
 network::network(const std::vector<layer>& tLayers, decltype(size_type) tSize) {
 	if (tSize) {
@@ -94,7 +11,7 @@ network::network(const std::vector<layer>& tLayers, decltype(size_type) tSize) {
 	assert(size >= 2);
 	std::vector<node> tLayerNodes;
 	for (decltype(size_type) layerIndex = 0; layerIndex < size; layerIndex++) {
-		if (layerIndex < tLayers.size()) {
+		if (layerIndex < static_cast<decltype(size_type)>(tLayers.size())) {
 			layers.push_back(tLayers[layerIndex]);
 		}
 		else {
@@ -179,22 +96,22 @@ void network::lossFunction(decltype(size_type) lastLayer, decltype(size_type) fo
 		}
 		break;
 	case 2:
-		// Softmax cross entropy error
+		// SoftMax cross entropy error
 		// E = desiredOutput * ln(soft_max(nodeOutput))
 		// soft_max = exp(nodeOutput) / sum(exp(nodesOutput))
 		// the grid = (desiredOutput - soft_max(nodeOutput)) * nodeOutput
-		decltype(precision) total_exp_nodes = 0, softmax_prob = 0;
+		decltype(precision) total_exp_nodes = 0, SoftMax_Probability = 0;
 		for (decltype(size_type) nodeIndex = 0; nodeIndex < layers[size + gPrevious].size; nodeIndex++) {
 			total_exp_nodes += exp(layers[size + gPrevious].nodes[nodeIndex].value);
 		}
 		for (decltype(size_type) nodeIndex = 0; nodeIndex < layers[size + gPrevious].size; nodeIndex++) {
-			// Compute the softmax probability for this node
-			softmax_prob = exp(layers[size + gPrevious].nodes[nodeIndex].value) / total_exp_nodes;
+			// Compute the SoftMax probability for this node
+			SoftMax_Probability = exp(layers[size + gPrevious].nodes[nodeIndex].value) / total_exp_nodes;
 			// Compute the cross-entropy loss for this node
-			decltype(precision) tError = -teacherResults[nodeIndex] * log(softmax_prob);
+			decltype(precision) tError = -teacherResults[nodeIndex] * log(SoftMax_Probability);
 			// Update errors and errorsGrid
 			errors[nodeIndex] += tError;
-			errorsGrid[nodeIndex] += (softmax_prob - teacherResults[nodeIndex]);
+			errorsGrid[nodeIndex] += (SoftMax_Probability - teacherResults[nodeIndex]);
 			totalError += tError;
 		}
 		break;
@@ -253,7 +170,7 @@ void network::trainingSession(const std::vector< std::vector<decltype(precision)
 			}
 			feedforward(firstLayer, lastLayer);
 			lossFunction(lastLayer, settings[0], static_cast<decltype(size_type)>(tTeacherResults[dataIndex].size()));
-			// debuging section
+			// debugging section
 			std::cout << "Input Values are: "; layers[firstLayer].viewNodesValues(); std::cout << std::endl;
 			std::cout << "Output Values are: "; layers[lastLayer].viewNodesValues(); std::cout << std::endl;
 			std::cout << "Desired Output Values are: "; viewArrayValues(teacherResults); std::cout << std::endl;
@@ -284,7 +201,7 @@ void network::dynamicSingleTraining(const std::vector<decltype(precision)>& inpu
 			}
 			feedforward(firstLayer, lastLayer);
 			lossFunction(lastLayer, settings[0], learnRange);
-			// debuging section
+			// debugging section
 			std::cout << "Input Values are: "; layers[firstLayer].viewNodesValues(); std::cout << std::endl;
 			std::cout << "Output Values are: "; layers[lastLayer].viewNodesValues(); std::cout << std::endl;
 			std::cout << "Desired Output Values are: "; viewArrayValues(teacherResults); std::cout << std::endl;
@@ -303,7 +220,7 @@ void network::assignOutput(layer& outLayer) {
 }
 
 void network::viewArrayValues(const std::vector<decltype(precision)> data) {
-	for (decltype(size_type) element = 0; element < data.size() + gPrevious; element++) {
+	for (decltype(size_type) element = 0; element < static_cast<decltype(size_type)>(data.size()) + gPrevious; element++) {
 		std::cout << data[element] << ", ";
 	}
 	std::cout << data[data.size() + gPrevious] << std::endl;
@@ -317,10 +234,10 @@ layer::layer(const std::vector<node>& tNodes, decltype(size_type) tSize) {
 	{
 		size = tSize = static_cast<decltype(size_type)>(tNodes.size());
 	}
-	// the minimus size of the layer is one plus the bias
+	// the minimum size of the layer is one plus the bias
 	assert(size >= 1);
 	for (decltype(size_type) nodeIndex = 0; nodeIndex < (size + cBias); nodeIndex++) {
-		if (nodeIndex < tNodes.size()) {
+		if (nodeIndex < static_cast<decltype(size_type)>(tNodes.size())) {
 			nodes.push_back(tNodes[nodeIndex]);
 		}
 		else {
@@ -343,7 +260,7 @@ void layer::OutputLayerBackPropagation(const std::vector<decltype(precision)>& e
 	for (decltype(size_type) grid = 0; grid < next.size; grid++) {
 		outputGrid[grid] = errorsGrid[grid] * node::activitationGrid(next.nodes[grid].preValue, next.nodes[grid].formulaCode, next.nodes[grid].min, next.nodes[grid].max);
 	}
-	for (decltype(size_type) nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+	for (decltype(size_type) nodeIndex = 0; nodeIndex < static_cast<decltype(size_type)>(nodes.size()); nodeIndex++) {
 		nodes[nodeIndex].backPropagation(outputGrid, updateSettings);
 	}
 }
@@ -351,27 +268,27 @@ void layer::backPropagation(const layer& next, const std::vector<bool>& updateSe
 	std::vector<decltype(precision)> outputGrid(next.size);
 	for (decltype(size_type) nodeIndex = 0; nodeIndex < next.size; nodeIndex++) {
 		decltype(precision) nodeTotalGrid = 0;
-		for (decltype(size_type) linkIndex = 0; linkIndex < next.nodes[nodeIndex].links.size(); linkIndex++) {
+		for (decltype(size_type) linkIndex = 0; linkIndex < static_cast<decltype(size_type)>(next.nodes[nodeIndex].links.size()); linkIndex++) {
 			nodeTotalGrid += next.nodes[nodeIndex].links[linkIndex].grid;
 		}
 		outputGrid[nodeIndex] = nodeTotalGrid * node::activitationGrid(next.nodes[nodeIndex].preValue, next.nodes[nodeIndex].formulaCode, next.nodes[nodeIndex].min, next.nodes[nodeIndex].max);
 	}
-	for (decltype(size_type) nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+	for (decltype(size_type) nodeIndex = 0; nodeIndex < static_cast<decltype(size_type)>(nodes.size()); nodeIndex++) {
 		nodes[nodeIndex].backPropagation(outputGrid, updateSettings);
 	}
 }
 void layer::rescaleLinks(const layer& next) {
-	for (decltype(size_type) nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+	for (decltype(size_type) nodeIndex = 0; nodeIndex < static_cast<decltype(size_type)>(nodes.size()); nodeIndex++) {
 		nodes[nodeIndex].rescaleLinks(next);
 	}
 }
 void layer::normalized_init(decltype(size_type) inputsLen, decltype(size_type) outputsLen) {
-	for (decltype(size_type) nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+	for (decltype(size_type) nodeIndex = 0; nodeIndex < static_cast<decltype(size_type)>(nodes.size()); nodeIndex++) {
 		nodes[nodeIndex].normalized_init(inputsLen, outputsLen);
 	}
 }
 void layer::viewNodesValues() {
-	for (decltype(size_type) nodeIndex = 0; nodeIndex < nodes.size() + gPrevious; nodeIndex++) {
+	for (decltype(size_type) nodeIndex = 0; nodeIndex < static_cast<decltype(size_type)>(nodes.size()) + gPrevious; nodeIndex++) {
 		std::cout << nodes[nodeIndex].value << ", ";
 	}
 	std::cout << nodes[nodes.size() + gPrevious].value << std::endl;
@@ -381,14 +298,14 @@ node::node(std::vector<link> tLinks, decltype(precision) tMin, decltype(precisio
 
 void node::feedforward(const layer& previous, decltype(size_type) linkIndex) {
 	preValue = 0;
-	for (decltype(size_type) inputNode = 0; inputNode < previous.nodes.size(); inputNode++) {
+	for (decltype(size_type) inputNode = 0; inputNode < static_cast<decltype(size_type)>(previous.nodes.size()); inputNode++) {
 		preValue += previous.nodes[inputNode].value * previous.nodes[inputNode].links[linkIndex].weight;
 	}
-	value = activitation(preValue, formulaCode, min, max);
+	value = activation(preValue, formulaCode, min, max);
 }
 
 void node::backPropagation(const std::vector<decltype(precision)>& outputGrid, const std::vector<bool>& updateSettings) {
-	for (decltype(size_type) grid = 0; grid < outputGrid.size(); grid++) {
+	for (decltype(size_type) grid = 0; grid < static_cast<decltype(size_type)>(outputGrid.size()); grid++) {
 		if (updateSettings[2] == true) {
 			// Adam update method
 			links[grid].grid = -value * outputGrid[grid];
@@ -421,11 +338,11 @@ void node::rescaleLinks(const layer& next) {
 	links.resize(next.size);
 }
 void node::normalized_init(decltype(size_type) inputsLen, decltype(size_type) outputsLen) {
-	for (decltype(size_type) weight = 0; weight < links.size(); weight++) {
+	for (decltype(size_type) weight = 0; weight < static_cast<decltype(size_type)>(links.size()); weight++) {
 		links[weight].weight = randomRange(static_cast<decltype(precision)>(-sqrt(6 * gNext) / sqrt(inputsLen + outputsLen)), static_cast<decltype(precision)>(sqrt(6 * gNext) / sqrt(inputsLen + outputsLen)));
 	}
 }
-decltype(precision) node::activitation(decltype(precision) input, decltype(size_type) formulaCode,
+decltype(precision) node::activation(decltype(precision) input, decltype(size_type) formulaCode,
 	decltype(precision) min, decltype(precision) max) {
 	switch (formulaCode) {
 	case 1:
@@ -479,33 +396,4 @@ decltype(precision) randomRange(decltype(precision) max, decltype(precision) min
 		max += 1 + gTinyNeg;
 	}
 	return (static_cast<decltype(precision)>(rand()) / (RAND_MAX) * (max - min) + min);
-}
-
-int __cdecl main() {
-	srand(static_cast<unsigned int>(time(0)));
-	std::vector<link> links(5);
-	std::vector<node> values(3);
-	//std::cout << std::setprecision(6) << std::showpoint;
-
-	layer input(values, 2);
-	values.resize(0);
-	layer middile(values, 30);
-	layer output(values, 2);
-	std::vector<layer> tLayers; tLayers.push_back(input);
-	for (decltype(size_type) middileNum = 0; middileNum < 10; middileNum++) {
-		tLayers.push_back(middile);
-	}
-	network snake(tLayers);
-	snake.assignOutput(output);
-	std::vector<std::vector<decltype(precision)>> inputs({
-		{-1,-1}, {1,-1}, {-1,1}, {1,1}
-		});
-	std::vector<std::vector<decltype(precision)>> outputs({
-		{1,-1}, {-1,1}, {-1,1}, {1,-1}
-		});
-	snake.normalized_init();
-	snake.deep_learning_pretraining(inputs[1], 300);
-	snake.trainingSession(inputs, outputs, gTraining_settings, gUpdateSettings, 10000);
-
-	return 0;
 }
