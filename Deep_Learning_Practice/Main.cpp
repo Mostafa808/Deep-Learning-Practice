@@ -1,4 +1,8 @@
 #include "FeedForward_Network.h"
+
+decltype(size_type) pretrainingLength = 1000,
+trainingLength = 1000000;
+
 int __cdecl main() {
 	srand(static_cast<unsigned int>(time(0)));
 	std::vector<link> links(5);
@@ -22,8 +26,8 @@ int __cdecl main() {
 		{1,-1}, {-1,1}, {-1,1}, {1,-1} // xor training
 		});
 	snake.normalized_init();
-	snake.deep_learning_pretraining(inputs[1], 300);
-	snake.trainingSession(inputs, outputs, gTraining_settings, gUpdateSettings, 10000);
+	snake.deep_learning_pretraining(inputs[1], pretrainingLength);
+	snake.trainingSession(inputs, outputs, gTraining_settings, gUpdateSettings, trainingLength);
 
 	return 0;
 }
